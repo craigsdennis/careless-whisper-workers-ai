@@ -1,0 +1,77 @@
+---
+import AudioPlayer from "./AudioPlayer.astro";
+---
+
+<audio-recorder>
+  <div class="controls">
+    <button class="record">⏺️</button>
+    <button class="stop">⏹️</button>
+  </div>
+  <AudioPlayer />
+</audio-recorder>
+
+<script>
+
+  class AudioRecoder extends HTMLElement {
+    connectedCallback() {
+      let mediaRecorder: MediaRecorder;
+      let audioChunks: BlobPart[] = [];
+
+      const startButton = this.querySelector(
+        "button.record"
+      ) as HTMLButtonElement;
+      const stopButton = this.querySelector("button.stop") as HTMLButtonElement;
+      const player = this.querySelector("audio-player") as HTMLElement;
+
+      function blobToDataUrl(blob: Blob) {
+        return new Promise((resolve, _) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      startButton.addEventListener("click", async () => {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          mediaRecorder = new MediaRecorder(stream);
+
+          mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+          };
+
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+            player.setAttribute("src", URL.createObjectURL(audioBlob));
+            const audioDataUrl = (await blobToDataUrl(audioBlob)) as string;
+            const audioBase64 = audioDataUrl.split(",")[1];
+            const response = await fetch("/api/recordings", {
+              method: "POST",
+              body: JSON.stringify({ audio: audioBase64 }),
+            });
+            const results: {
+              text: string;
+              vtt: string;
+            } = await response.json();
+            player.setAttribute("transcription", results.text);
+            player.setAttribute("vtt", results.vtt);
+            audioChunks = [];
+          };
+
+          mediaRecorder.start();
+          startButton.disabled = true;
+          stopButton.disabled = false;
+        }
+      });
+
+      stopButton.addEventListener("click", () => {
+        mediaRecorder.stop();
+        startButton.disabled = false;
+        stopButton.disabled = true;
+      });
+    }
+  }
+  customElements.define("audio-recorder", AudioRecoder);
+</script>

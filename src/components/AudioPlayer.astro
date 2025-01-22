@@ -1,0 +1,77 @@
+---
+interface Props {
+  src?: string;
+  vtt?: string;
+  transcription?: string;
+}
+const { vtt, src, transcription } = Astro.props;
+---
+
+<audio-player src={src} vtt={vtt} transcription={transcription}>
+  <audio preload="metadata" controls style="display: none;"></audio>
+  <div class="tt-transcript" style="display: none;"></div>
+</audio-player>
+
+<script
+  is:inline
+  src="https://cdn.jsdelivr.net/gh/samuelbradshaw/transcript-tracer-js@main/transcript-tracer.js"
+></script>
+<style is:global>
+  .tt-current-word {
+    font-weight: bold;
+    background-color: yellow;
+  }
+</style>
+
+<script>
+
+  class AudioPlayer extends HTMLElement {
+    src?: string;
+    transcription?: string;
+    vtt?: string;
+    static observedAttributes = ["src", "vtt", "transcription"];
+
+    attributeChangedCallback(attrName: "src" | "vtt" | "transcription", oldVal: string, newVal: string) {
+      this[attrName] = newVal;
+      this.refresh();
+    }
+    refresh() {
+        const audioPlayback = this.querySelector("audio") as HTMLAudioElement;
+        const transcriptionOutput = this.querySelector(
+          ".tt-transcript"
+        ) as HTMLDivElement;
+        if (this.src) {
+          console.log({ audioPlayback });
+          audioPlayback.src = this.src;
+          audioPlayback.style.display = "block";
+        }
+        if (this.transcription) {
+          transcriptionOutput.style.display = "block";
+          transcriptionOutput.innerHTML = `<p>${this.transcription}</p>`;
+          transcriptionOutput.setAttribute(
+            "data-tt-media-urls",
+            audioPlayback.src
+          );
+        }
+        if (this.vtt) {
+          // TODO: Don't do it twice?
+          const trackElement = document.createElement(
+            "track"
+          ) as HTMLTrackElement;
+          trackElement.kind = "metadata";
+          trackElement.src = `data:text/plain;charset=UTF-8,${encodeURIComponent(this.vtt)}`;
+          audioPlayback.appendChild(trackElement);
+        }
+        if (this.vtt && this.transcription && this.src) {
+            // @ts-ignore - Loaded inline?
+            loadTranscriptTracer({ clickable: true });
+        }
+    }
+    
+    connectedCallback() {
+        console.log("connected");
+        this.refresh();
+    }
+  }
+  customElements.define("audio-player", AudioPlayer);
+</script>

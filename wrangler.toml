@@ -3,10 +3,21 @@ name = "careless-whisper"
 compatibility_date = "2025-01-09"
 compatibility_flags = ["nodejs_compat"]
 main = "./dist/_worker.js/index.js"
-assets = { directory = "./dist", binding = "ASSETS" }
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
 
 # Workers Logs
 # Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 # Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs
 [observability]
 enabled = true
+
+[ai]
+binding = "AI"
+
+[[services]]
+binding = "UPLOADER"
+service = "autotranscriber"
+entrypoint = "Uploader"
