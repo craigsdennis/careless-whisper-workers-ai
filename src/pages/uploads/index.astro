@@ -1,17 +1,27 @@
 ---
 export const prerender = false;
 
+import Example from "../../components/Example.astro";
 import Layout from "../../layouts/Layout.astro";
 
-const {env} = Astro.locals.runtime;
+const { env } = Astro.locals.runtime;
 const keys: string[] = await env.UPLOADER.listUploads();
 ---
 
+
 <Layout>
-    <h2>Previous Uploads</h2>
+  <h2>Previous Uploads</h2>
+  <Example>
     <ul>
-        {keys.map((key) => (
-            <li><a href={"/uploads/" + key}>{key}</a></li>
-        ))}
+      {
+        keys.map((key) => (
+          <li>
+            <a href={"/uploads/" + key}>{key}</a>
+          </li>
+        ))
+      }
     </ul>
+  </Example>
 </Layout>
+
+

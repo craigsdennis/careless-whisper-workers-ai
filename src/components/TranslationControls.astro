@@ -1,0 +1,100 @@
+---
+interface Props {
+    language: string;
+    translation?: string;
+}
+const {language} = Astro.props
+---
+<translation-controls class="refreshable" language={language}>
+  <button style="display: none;">🗣️ Translate</button>
+  <div class="translation" style="display: none;"></div>
+</translation-controls>
+
+
+<script>
+  import { actions } from "astro:actions";
+
+  class TranslationControls extends HTMLElement {
+    translation?: string;
+    language: string;
+    static observedAttributes = ["translation"];
+
+    constructor() {
+      super();
+      this.language = this.getAttribute("language") || "es";
+    }
+
+    attributeChangedCallback(
+      attrName:  "language",
+      oldVal: string,
+      newVal: string
+    ) {
+      this[attrName] = newVal;
+      this.refresh();
+    }
+    refresh() {
+      console.log("refreshing", this);
+      const audioPlayback = this.previousElementSibling as HTMLAudioElement;
+      const translateButton = this.querySelector(
+        "button"
+      ) as HTMLButtonElement;
+      const translationOutput = this.querySelector(
+        ".translation"
+      ) as HTMLDivElement;    
+      if (audioPlayback?.src) {
+        translateButton.style.display = 'block';
+      }  
+      if (this.translation) {
+        translationOutput.style.display = "block";
+        translationOutput.innerHTML = `<p>${this.translation}</p>`;
+      }
+    }
+
+    async performTranslation() {
+      const audioPlayback = this.previousElementSibling as HTMLAudioElement;
+      const audioResponse = await fetch(audioPlayback.src);
+      const aBuffer = await audioResponse.arrayBuffer();
+      const bytes = new Uint8Array(aBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64String = btoa(binary);
+      // Use actions
+      const { data, error } = await actions.translate({
+        audio: base64String,
+        language: this.language,
+      });
+      if (error) {
+        console.log("Problem during translate action");
+        console.error(error);
+        return;
+      }
+      if (!data) {
+        console.error("Bummer, no data");
+        return;
+      }
+      this.translation = data.text;
+      this.refresh();
+    }
+
+    reset() {
+        // Clear out the placeholders
+        const translationOutput = this.querySelector(
+            ".translation"
+        ) as HTMLDivElement;    
+        translationOutput.innerHTML = "";
+    }
+
+    connectedCallback() {
+      console.log("connected");
+      const button = this.querySelector("button");
+      button?.addEventListener("click", async () => {
+        this.reset();
+        await this.performTranslation();
+      });
+      this.refresh();
+    }
+  }
+  customElements.define("translation-controls", TranslationControls);
+</script>

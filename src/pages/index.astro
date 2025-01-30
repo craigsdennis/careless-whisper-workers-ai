@@ -1,11 +1,56 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import AudioRecorder from '../components/AudioRecorder.astro';
+import Layout from "../layouts/Layout.astro";
+import AudioRecorder from "../components/AudioRecorder.astro";
+import AudioPlayer from "../components/AudioPlayer.astro";
+import TranscriptionControls from "../components/TranscriptionControls.astro";
+import TranslationControls from "../components/TranslationControls.astro";
+import Example from "../components/Example.astro";
+
+const audioExample = "/cloudflare-stack-ramble-as-a-teen.mp3";
 ---
 
 <Layout>
-	<div>
-		<p>Default params</p>
-		<AudioRecorder />
-	</div>
+  <h1>Careless Whisper</h1>
+  <p>This is using the OpenAI Whisper Model on Cloudflare Workers AI.</p>
+  <Example>
+    <p>Record your voice and submit it with default parameters</p>
+    <AudioRecorder />
+  </Example>
+  <Example>
+    <p>Transcribe existing file</p>
+    <AudioPlayer src={audioExample}>
+      <TranscriptionControls />
+    </AudioPlayer>
+  </Example>
+  <Example>
+    <p>Transcribe existing file providing <code>initial_prompt</code></p>
+    <p>
+      <code
+        >initial_prompt="This is a recording from a person named Craig who is
+        talking about Cloudflare products. KV, Durable Objects, D1, Workers AI,
+        AI Gateway"</code
+      >
+    </p>
+    <AudioPlayer src={audioExample}>
+      <TranscriptionControls
+        initialPrompt="This is a recording from a person named Craig who is talking about Cloudflare products. KV, Durable Objects, D1, Workers AI, AI Gateway"
+      />
+    </AudioPlayer>
+  </Example>
+  <Example>
+    <p>
+      Transcribe existing file providing <code>prefix</code> with some punctuation
+      and caps
+    </p>
+    <p><code>prefix="i would prefer everything in lowercase."</code></p>
+    <AudioPlayer src={audioExample}>
+      <TranscriptionControls promptPrefix="i would prefer everything in lowercase." />
+    </AudioPlayer>
+  </Example>
+  <Example>
+    <p>Translate existing file</p>
+    <AudioPlayer src="/things-i-might-try-to-say-in-spanish.mp3">
+      <TranslationControls language="es" />
+    </AudioPlayer>
+  </Example>
 </Layout>

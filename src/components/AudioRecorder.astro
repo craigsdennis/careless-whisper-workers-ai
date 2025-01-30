@@ -1,5 +1,6 @@
 ---
 import AudioPlayer from "./AudioPlayer.astro";
+import TranscriptionControls from "./TranscriptionControls.astro";
 ---
 
 <audio-recorder>
@@ -7,7 +8,9 @@ import AudioPlayer from "./AudioPlayer.astro";
     <button class="record">⏺️</button>
     <button class="stop">⏹️</button>
   </div>
-  <AudioPlayer />
+  <AudioPlayer>
+    <TranscriptionControls />
+  </AudioPlayer>
 </audio-recorder>
 
 <script>
@@ -21,15 +24,7 @@ import AudioPlayer from "./AudioPlayer.astro";
         "button.record"
       ) as HTMLButtonElement;
       const stopButton = this.querySelector("button.stop") as HTMLButtonElement;
-      const player = this.querySelector("audio-player") as HTMLElement;
-
-      function blobToDataUrl(blob: Blob) {
-        return new Promise((resolve, _) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        });
-      }
+      const player = this.querySelector("audio-player");
 
       startButton.addEventListener("click", async () => {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -37,26 +32,15 @@ import AudioPlayer from "./AudioPlayer.astro";
             audio: true,
           });
           mediaRecorder = new MediaRecorder(stream);
-
           mediaRecorder.ondataavailable = (event) => {
             audioChunks.push(event.data);
           };
 
           mediaRecorder.onstop = async () => {
             const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
-            player.setAttribute("src", URL.createObjectURL(audioBlob));
-            const audioDataUrl = (await blobToDataUrl(audioBlob)) as string;
-            const audioBase64 = audioDataUrl.split(",")[1];
-            const response = await fetch("/api/recordings", {
-              method: "POST",
-              body: JSON.stringify({ audio: audioBase64 }),
-            });
-            const results: {
-              text: string;
-              vtt: string;
-            } = await response.json();
-            player.setAttribute("transcription", results.text);
-            player.setAttribute("vtt", results.vtt);
+            // TODO: Refresh the children somehow
+            // TODO: How to get the right type
+            player.updateAudio(URL.createObjectURL(audioBlob));
             audioChunks = [];
           };
 

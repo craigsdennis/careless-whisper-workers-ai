@@ -1,0 +1,142 @@
+---
+interface Props {
+    initialPrompt?: string;
+    promptPrefix?: string;
+    vtt?: string;
+    transcription?: string;
+}
+const {initialPrompt, promptPrefix, vtt, transcription} = Astro.props
+---
+<transcription-controls class="refreshable" initial-prompt={initialPrompt} prompt-prefix={promptPrefix} vtt={vtt}, transcription={transcription}>
+  <button style="display: none;">🎧 Transcribe</button>
+  <div class="tt-transcript" data-tt-media-urls="" style="display: none;"></div>
+</transcription-controls>
+
+<script
+  is:inline
+  src="https://cdn.jsdelivr.net/gh/samuelbradshaw/transcript-tracer-js@main/transcript-tracer.js"
+></script>
+
+<style is:global>
+  .tt-current-word {
+    font-weight: bold;
+    background-color: orange;
+  }
+</style>
+
+<script>
+  import { actions } from "astro:actions";
+
+  class TranscriptionControls extends HTMLElement {
+    transcription?: string;
+    vtt?: string;
+    initialPrompt?: string;
+    promptPrefix?: string;
+    static observedAttributes = ["vtt", "transcription"];
+
+    constructor() {
+      super();
+      this.initialPrompt = this.getAttribute("initial-prompt") || undefined;
+      this.promptPrefix = this.getAttribute("prompt-prefix") || undefined;
+    }
+
+    attributeChangedCallback(
+      attrName:  "vtt" | "transcription",
+      oldVal: string,
+      newVal: string
+    ) {
+      console.log("Setting", attrName, newVal);
+      this[attrName] = newVal;
+      this.refresh();
+    }
+    refresh() {
+      console.log("refreshing", this);
+      const audioPlayback = this.previousElementSibling as HTMLAudioElement;
+      const transcribeButton = this.querySelector(
+        "button"
+      ) as HTMLButtonElement;
+      const transcriptionOutput = this.querySelector(
+        ".tt-transcript"
+      ) as HTMLDivElement;    
+      if (audioPlayback?.src) {
+        transcribeButton.style.display = 'block';
+      }  
+      if (this.transcription) {
+        transcriptionOutput.style.display = "block";
+        transcriptionOutput.innerHTML = `<p>${this.transcription}</p>`;
+      }
+      if (audioPlayback?.src) {
+        if (this.transcription) {
+          transcriptionOutput.setAttribute(
+            "data-tt-media-urls",
+            audioPlayback.src
+          );
+          if (this.vtt) {
+            // TODO: Don't do it twice?
+            const trackElement = document.createElement(
+              "track"
+            ) as HTMLTrackElement;
+            trackElement.kind = "metadata";
+            trackElement.src = `data:text/plain;charset=UTF-8,${encodeURIComponent(this.vtt)}`;
+            audioPlayback.appendChild(trackElement);
+          }
+          if (this.vtt && this.transcription) {
+            // @ts-ignore - Loaded inline?
+            loadTranscriptTracer({ clickable: true });
+          }
+        }
+      }
+    }
+
+    async transcribe() {
+      const audioPlayback = this.previousElementSibling as HTMLAudioElement;
+      const audioResponse = await fetch(audioPlayback.src);
+      const aBuffer = await audioResponse.arrayBuffer();
+      const bytes = new Uint8Array(aBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64String = btoa(binary);
+      // Use actions
+      const { data, error } = await actions.transcribe({
+        audio: base64String,
+        prefix: this.promptPrefix,
+        initial_prompt: this.initialPrompt
+      });
+      if (error) {
+        console.log("Problem during transcribe action");
+        console.error(error);
+        return;
+      }
+      if (!data) {
+        console.error("Bummer, no data");
+        return;
+      }
+      this.transcription = data.text;
+      this.vtt = data.vtt;
+      this.refresh();
+    }
+
+    reset() {
+        // Clear out the placeholders
+        const transcriptionOutput = this.querySelector(
+            ".tt-transcript"
+        ) as HTMLDivElement;    
+        transcriptionOutput.innerHTML = "";
+        this.vtt = undefined;
+        this.transcription = undefined;
+    }
+
+    connectedCallback() {
+      console.log("connected");
+      const button = this.querySelector("button");
+      button?.addEventListener("click", async () => {
+        this.reset();
+        await this.transcribe();
+      });
+      this.refresh();
+    }
+  }
+  customElements.define("transcription-controls", TranscriptionControls);
+</script>

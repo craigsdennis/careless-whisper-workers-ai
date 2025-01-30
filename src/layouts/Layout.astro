@@ -1,24 +1,44 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="mage/x-icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Careless Whisper</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+  <footer>
+    <p>
+      Made with 🧡 using <a href="https://developers.cloudflare.com/workers-ai"
+        >Cloudflare Workers AI</a
+      > and the <a href="https://astro.build">Astro web framework</a>
+    </p>
+    <p>👀 <a href="https://github.com">the code</a></p>
+  </footer>
 </html>
 
 <style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-		background-color: black;
-		color: white;
-	}
+  body {
+    font-family: "Inter", "SF Pro", Arial, sans-serif;
+    font-size: 25px;
+    background-color: #121212;
+    color: #ffffff;
+    min-height: 100vh;
+    text-align: center;
+  }
+  footer {
+    font-size: smaller;
+    background-color: #313131;
+  }
+  footer a {
+    color: #f6821f;
+    text-decoration: none;
+  }
+
+  footer a:hover {
+    text-decoration: underline;
+  }
 </style>
