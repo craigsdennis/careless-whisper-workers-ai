@@ -4,7 +4,7 @@ This is an [Astro web application](https://astro.build) built on [Cloudflare Wor
 
 The [meat of the application happens in the Astro actions](./src/actions/index.ts).
 
-[<img src="https://img.youtube.com/vi/https://youtu.be/Df04laN8Y3s/0.jpg">](https://youtu.be/https://youtu.be/Df04laN8Y3s "Add Automatic Speech Recognition to your Web Apps")
+[<img src="https://img.youtube.com/vi/Df04laN8Y3s/0.jpg">](https://youtu.be/https://youtu.be/Df04laN8Y3s "Add Automatic Speech Recognition to your Web Apps")
 
 
 ## Setup
